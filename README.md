@@ -1,5 +1,5 @@
 # Stabilizer
-![微信图片_20220920120100](https://user-images.githubusercontent.com/55620073/191164666-e2d0e2c8-6b14-475a-94ac-6454b44221f7.png)
+![微信图片_20220920130336](https://user-images.githubusercontent.com/55620073/191171772-d1c0c606-10ef-4cdd-bbfd-4f5a1a3f6ed2.png)
 A tool for finding & sorting the HF stabilizers
 
 ## Install
