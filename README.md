@@ -1,7 +1,7 @@
 # Stabilizer
 A tool for finding & sorting the HF stabilizers
 
-## Import
+## Install
 Since this is just a simple pythonfile, just put it directly in $PYTHONPATH.
 
 ## Dependency
