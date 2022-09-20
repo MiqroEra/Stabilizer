@@ -15,5 +15,6 @@ hf = stabilizer(p)
 # p is the path or qiskit tensor object
 hf.run()
 ```
-The pauli operators is stored in a sorted "quaternary tree" (like binary tree) so that when a stabilizer is found, the number of term decrease as $log_4n$
+The pauli operators is stored in a sorted "quaternary tree" (like binary tree) so that when a stabilizer is found, the number of term decrease as $log_4n$.
+
 See more details in the examples
