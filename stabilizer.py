@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import os
 
@@ -23,8 +22,20 @@ class treenode:
             return self.root
         else:
             raise Exception('This node has no root.')
+    def mult(self, mp):
+        if self.value is not None:
+            self.value *= mp
+        else:
+            if self.i is not None:
+                self.i.mult(mp)
+            if self.x is not None:
+                self.x.mult(mp)
+            if self.y is not None:
+                self.y.mult(mp)
+            if self.z is not None:
+                self.z.mult(mp)
 
-class stabilizer:
+class hf:
     def __init__(self, p):
         if type(p) == str:
             if os.path.exists(p):
@@ -86,21 +97,22 @@ class stabilizer:
                 curnode = self.add_branch(curnode, j)
             curnode.value = self.data[i_idx]
         self.energynode = self.get_node('I'*len(self.operator[0]))
+        self.treedepth = len(self.operator[0])
         self.treetype = self.tree.__class__
         return
-    def get_str_from_tree(self, curnode, s, l):
-        if len(s) < l:
+    def get_str_from_tree(self, curnode, s):
+        if len(s) < self.treedepth:
             if curnode.i != None:
-                self.get_str_from_tree(curnode.i, s+'I', l)
+                self.get_str_from_tree(curnode.i, s+'I')
             if curnode.x != None:
-                self.get_str_from_tree(curnode.x, s+'X', l)
+                self.get_str_from_tree(curnode.x, s+'X')
             if curnode.y != None:
-                self.get_str_from_tree(curnode.y, s+'Y', l)
+                self.get_str_from_tree(curnode.y, s+'Y')
             if curnode.z != None:
-                self.get_str_from_tree(curnode.z, s+'Z', l)
+                self.get_str_from_tree(curnode.z, s+'Z')
         else:
-            self.tmp_opr.append(s)
-            self.tmp_data.append(curnode.value)
+            self.operator.append(s)
+            self.data.append(curnode.value)
             return
         return
     def flush_operators(self):
@@ -109,7 +121,7 @@ class stabilizer:
         self.operator = []
         self.data = []
         curnode = self.tree
-        self.get_str_from_tree(curnode, '', len(self.operator[0]))
+        self.get_str_from_tree(curnode, '')
         return
     def get_noti(self, opr):
         notilist = []
@@ -171,6 +183,45 @@ class stabilizer:
                 raise Exception('Undefined Symbol!',j)
         return curnode
     def n_add_2n(self, n1, n2, mp):
+        # here the node is surely exist
+        # Deal with the I,X,Y,Z
+        if n2.i is None and n1.i is not None:
+            # Node -> None, 
+            n1.i.root = n2 # change root (link n1.i to n2)
+            # Don't need to care about rootpos, beacause it's I to I!
+            n2.i = n1.i # copy n1.i (link n2 to n1.i)
+            n2.i.mult(mp) # deal with the multiplier
+        elif n1.i is not None:
+            # node2.i not empty, node1.i not empty -> node to node!
+            self.n_add_2n(n1.i, n2.i, mp)
+        if n2.x is None and n1.x is not None:
+            n1.x.root = n2
+            n2.x = n1.x
+            n2.x.mult(mp)
+        elif n1.x is not None:
+            self.n_add_2n(n1.x, n2.x, mp)
+        if n2.y is None and n1.y is not None:
+            n1.y.root = n2
+            n2.y = n1.y
+            n2.y.mult(mp)
+        elif n1.y is not None:
+            self.n_add_2n(n1.y, n2.y, mp)
+        if n2.z is None and n1.z is not None:
+            n1.z.root = n2
+            n2.z = n1.z
+            n2.z.mult(mp)
+        elif n1.z is not None:
+            self.n_add_2n(n1.z, n2.z, mp)
+        # Deal with value
+        if n1.value is not None:
+            if n2.value is None:
+                n2.value = n1.value * mp
+            else:
+                n2.value += n1.value * mp
+        # Don't need to deal with rootpos
+        return
+    def _n_add_2n(self, n1, n2, mp):
+        print('fold',self.print_the_node(n1),'to',self.print_the_node(n2),'. The multiplyer is:', mp)
         # here the node is surely exist
         if n2.i is None:
             if type(n1.i) == self.treetype:
