@@ -15,4 +15,4 @@ hf = stabilizer(p)
 # p is the path or qiskit tensor object
 hf.run()
 ```
-See more detail in the examples
+See more details in the examples
