@@ -10,11 +10,11 @@ Need Numpy package
 
 ## How to Use
 ``` python
-from stabilizer import stabilizer
+from stabilizer import hf
 
-hf = stabilizer(p)
+myhf = hf(p)
 # p is the path or qiskit tensor object
-hf.run()
+myhf.run()
 ```
 The pauli operators is stored in a sorted "quaternary tree" (like binary tree) so that when a stabilizer is found, the number of term decrease as $log_4N$.
 
