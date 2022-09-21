@@ -18,7 +18,8 @@ myhf.run() # Predict the states
 # only core and vacuum orbitals could be fill.
 
 myhf2 = hf(p)
-myhf2.
+myhf2.get_state_energy('000010111101') 
+# Check the energy of some state.
 ```
 The pauli operators is stored in a sorted "quaternary tree" (like binary tree) so that when a stabilizer is found, the number of term decrease as $log_4N$.
 
