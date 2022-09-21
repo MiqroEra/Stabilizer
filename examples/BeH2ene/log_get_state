@@ -1,0 +1,25 @@
+The basic energy: -12.099316093219068
+Replace Z to I , Z = 1
+system energy: -12.57974849772343
+Replace IZ to II , Z = 1
+system energy: -12.772360553450836
+Replace IIZ to III , Z = 1
+system energy: -12.746842738588754
+Replace IIIZ to IIII , Z = 1
+system energy: -12.627047197870882
+Replace IIIIZ to IIIII , Z = -1
+system energy: -12.833132387237319
+Replace IIIIIZ to IIIIII , Z = 1
+system energy: -15.744336492408888
+Replace IIIIIIZ to IIIIIII , Z = -1
+system energy: -16.16117850519445
+Replace IIIIIIIZ to IIIIIIII , Z = -1
+system energy: -16.278209863371927
+Replace IIIIIIIIZ to IIIIIIIII , Z = -1
+system energy: -16.174122066542303
+Replace IIIIIIIIIZ to IIIIIIIIII , Z = -1
+system energy: -15.975756543856887
+Replace IIIIIIIIIIZ to IIIIIIIIIII , Z = 1
+system energy: -16.24757923760623
+Replace IIIIIIIIIIIZ to IIIIIIIIIIII , Z = -1
+system energy: -18.968225680553413
