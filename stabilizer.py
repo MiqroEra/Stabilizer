@@ -45,6 +45,7 @@ class hf:
         else:
             self.init_qiskit(p)
         self.build_tree_from_op()
+        self.states = ['?']*self.treedepth
         return
     def init_from_file(self, p):
         self.data = []
@@ -220,40 +221,6 @@ class hf:
                 n2.value += n1.value * mp
         # Don't need to deal with rootpos
         return
-    def _n_add_2n(self, n1, n2, mp):
-        print('fold',self.print_the_node(n1),'to',self.print_the_node(n2),'. The multiplyer is:', mp)
-        # here the node is surely exist
-        if n2.i is None:
-            if type(n1.i) == self.treetype:
-                n1.i.root = n2
-            n2.i = n1.i
-        elif n1.i is not None:
-            # node2.i not empty, node1.i not empty -> node to node!
-            self.n_add_2n(n1.i, n2.i, mp)
-        if n2.x is None:
-            if type(n1.x) == self.treetype:
-                n1.x.root = n2
-            n2.x = n1.x
-        elif n1.x is not None:
-            self.n_add_2n(n1.x, n2.x, mp)
-        if n2.y is None:
-            if type(n1.y) == self.treetype:
-                n1.y.root = n2
-            n2.y = n1.y
-        elif n1.y is not None:
-            self.n_add_2n(n1.y, n2.y, mp)
-        if n2.z is None:
-            if type(n1.z) == self.treetype:
-                n1.z.root = n2
-            n2.z = n1.z
-        elif n1.z is not None:
-            self.n_add_2n(n1.z, n2.z, mp)
-        if n1.value is not None:
-            if n2.value is None:
-                n2.value = n1.value * mp
-            else:
-                n2.value += n1.value * mp
-        return
     def fold_node_to_node(self, ngive, nget, mp, check=False):
         # ngive and nget are strings
         # check or create node 2
@@ -266,48 +233,66 @@ class hf:
         node_get = self.get_node(nget, check=False)
         self.n_add_2n(node_give, node_get, mp)
         return
-    def treefold(self, qbit, tochar, mp):
+    def tree_set_qbit(self, qbit, tochar, mp):
         foldarray = []
         for i in self.operator:
             if i[qbit[0]] == qbit[1]:
                 foldarray.append(i)
         for i in foldarray:
             if self.is_term_exist(i):
-                print('Now change',i[:qbit[0]+1],'to',i[:qbit[0]]+tochar)
-                print('Choose',qbit[1],'to be',mp)
+                print('Replace',i[:qbit[0]+1],'to',i[:qbit[0]]+tochar,',',qbit[1],'=',mp)
                 self.fold_node_to_node(i[:qbit[0]+1], i[:qbit[0]]+tochar, mp, check=True)
-                ngiveroot = self.get_node(i[:qbit[0]]) 
-                if qbit[1] == 'I':
-                    ngiveroot.i = None
-                elif qbit[1] == 'X':
-                    ngiveroot.x = None
-                elif qbit[1] == 'Y':
-                    ngiveroot.y = None
-                elif qbit[1] == 'Z':
-                    ngiveroot.z = None
-                else:
-                    raise Exception('No such symbol!', qbit[1])
+                ngiveroot = self.get_node(i[:qbit[0]])
+                # When one qbit is choose, such ad Z |phi> = -1 |phi>,
+                # then X |phi> = 0 and the original data in tree 
+                # need also be remove.
+                chars = ['I', 'X', 'Y', 'Z']
+                chars.remove(tochar)
+                for j in chars:
+                    if j == 'I':
+                        ngiveroot.i = None
+                    elif j == 'X':
+                        ngiveroot.x = None
+                    elif j == 'Y':
+                        ngiveroot.y = None
+                    elif j == 'Z':
+                        ngiveroot.z = None
+                    else:
+                        raise Exception('No such symbol!', j)
         return
     def run(self):
-        self.operator, self.data = self.flush_operators()
         print('system energy:', self.data[0])
-        while len(self.operator) > 2:
+        while len(self.operator) >= 2:
             rank = np.argmax(np.abs(self.data[1:]))
             maxvalue =  self.data[1:][rank]
             maxopr = self.operator[1:][rank]
+            print('The leading term:', maxopr, maxvalue)
             qbits = self.get_noti(maxopr)
             if len(qbits) > 1:
                 l = len(self.operator)
                 print()
                 print('Can not deal with entangled state!(more than 2 q-bits)')
                 print('Remaining', l,'terms')
+                print('Now the states is:', *self.states)
                 for i in range(l):
                     print('%15.8f\t%s' %(self.data[i],self.operator[i]))
                 raise Exception('Finish running.')
             else:
-                print('The leading term:', maxopr, maxvalue)
                 mp = 1 if self.get_node(maxopr).value < 0 else -1
-                self.treefold(qbits[0], 'I', mp)
-                self.operator, self.data = self.flush_operators()
+                qbit = qbits[0]
+                self.states[qbit[0]] = qbit[1]+'('+str(mp)+')'
+                self.tree_set_qbit(qbits[0], 'I', mp)
+                self.flush_operators()
                 print('system energy:', self.data[0])
         return
+    def get_state_energy(self, statestr):
+        mps = []
+        for i in statestr:
+            k = 1 if i == '0' else -1
+            mps.append(k)
+        print('The basic energy:', self.data[0])
+        for idx, i in enumerate(mps):
+            qbit = (idx, 'Z')
+            self.tree_set_qbit(qbit, 'I', i)
+            self.flush_operators()
+            print('system energy:', self.data[0])
