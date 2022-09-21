@@ -12,9 +12,13 @@ Need Numpy package
 ``` python
 from stabilizer import hf
 
-myhf = hf(p)
-# p is the path or qiskit tensor object
-myhf.run()
+myhf = hf(p) # p is the path or qiskit tensor object
+myhf.run() # Predict the states
+# now the tool can not deal with entangled states 
+# only core and vacuum orbitals could be fill.
+
+myhf2 = hf(p)
+myhf2.
 ```
 The pauli operators is stored in a sorted "quaternary tree" (like binary tree) so that when a stabilizer is found, the number of term decrease as $log_4N$.
 
