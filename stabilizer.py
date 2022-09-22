@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import sys
 
 class treenode:
     def __init__(self, root=None, rootpos=None, 
@@ -45,7 +46,7 @@ class hf:
         else:
             self.init_qiskit(p)
         self.build_tree_from_op()
-        self.states = ['?']*self.treedepth
+        self.states = ['-?-']*self.treedepth
         return
     def init_from_file(self, p):
         self.data = []
@@ -233,32 +234,58 @@ class hf:
         node_get = self.get_node(nget, check=False)
         self.n_add_2n(node_give, node_get, mp)
         return
-    def tree_set_qbit(self, qbit, tochar, mp):
+    def remove_branch(self, s):
+        if self.is_term_exist(s):
+            thenode = self.get_node(s)
+            if s[-1] == 'I':
+                thenode.root.i = None
+            elif s[-1] == 'X':
+                thenode.root.x = None
+            elif s[-1] == 'Y':
+                thenode.root.y = None
+            elif s[-1] == 'Z':
+                thenode.root.z = None
+            else:
+                raise Exception('No such operator:', s[-1])
+        return
+    def tree_set_qbit_to_I(self, qbit, mp):
         foldarray = []
+        remarray = []
         for i in self.operator:
-            if i[qbit[0]] == qbit[1]:
-                foldarray.append(i)
+            opchar = i[qbit[0]]
+            if opchar == qbit[1]:
+                foldarray.append(i[:qbit[0]+1])
+            elif opchar != 'I':
+                remarray.append(i[:qbit[0]+1])
         for i in foldarray:
             if self.is_term_exist(i):
-                print('Replace',i[:qbit[0]+1],'to',i[:qbit[0]]+tochar,',',qbit[1],'=',mp)
-                self.fold_node_to_node(i[:qbit[0]+1], i[:qbit[0]]+tochar, mp, check=True)
-                ngiveroot = self.get_node(i[:qbit[0]])
+                print('Replace', i, 'to', i[:-1]+'I', ',', qbit[1],'=',mp)
+                self.fold_node_to_node(i, i[:-1]+'I', mp, check=True)
+                ngiveroot = self.get_node(i[:-1])
                 # When one qbit is choose, such ad Z |phi> = -1 |phi>,
                 # then X |phi> = 0 and the original data in tree 
                 # need also be remove.
-                chars = ['I', 'X', 'Y', 'Z']
-                chars.remove(tochar)
-                for j in chars:
-                    if j == 'I':
-                        ngiveroot.i = None
-                    elif j == 'X':
-                        ngiveroot.x = None
-                    elif j == 'Y':
-                        ngiveroot.y = None
-                    elif j == 'Z':
-                        ngiveroot.z = None
-                    else:
-                        raise Exception('No such symbol!', j)
+                ngiveroot.x = None
+                ngiveroot.y = None
+                ngiveroot.z = None
+        for i in remarray:
+            self.remove_branch(i)
+        return             
+    def print_remaining_terms(self, fs=None):
+        l = len(self.operator)
+        d = self.treedepth//2
+        keys = np.argsort(np.abs(self.data))
+        if fs is not None:
+            output = sys.stdout
+            sys.stdout = open(fs, 'w')
+        print('Remaining', l,'terms')
+        print('Now the states is:\n', *self.states[:d], '  |  ', *self.states[d:])
+        for i in keys[::-1]:
+            print('%15.8f\t\t\t%s\t\t%s' %(self.data[i], 
+                                            self.operator[i][:d], 
+                                            self.operator[i][d:]))
+        if fs is not None:
+            sys.stdout = output
         return
     def run(self):
         print('system energy:', self.data[0])
@@ -269,19 +296,14 @@ class hf:
             print('The leading term:', maxopr, maxvalue)
             qbits = self.get_noti(maxopr)
             if len(qbits) > 1:
-                l = len(self.operator)
-                print()
-                print('Can not deal with entangled state!(more than 2 q-bits)')
-                print('Remaining', l,'terms')
-                print('Now the states is:', *self.states)
-                for i in range(l):
-                    print('%15.8f\t%s' %(self.data[i],self.operator[i]))
+                print('Can not deal with entangled state!(more than 2 q-bits)\n')
+                self.print_remaining_terms()
                 raise Exception('Finish running.')
             else:
                 mp = 1 if self.get_node(maxopr).value < 0 else -1
                 qbit = qbits[0]
                 self.states[qbit[0]] = qbit[1]+'('+str(mp)+')'
-                self.tree_set_qbit(qbits[0], 'I', mp)
+                self.tree_set_qbit_to_I(qbits[0], mp)
                 self.flush_operators()
                 print('system energy:', self.data[0])
         return
@@ -293,6 +315,6 @@ class hf:
         print('The basic energy:', self.data[0])
         for idx, i in enumerate(mps):
             qbit = (idx, 'Z')
-            self.tree_set_qbit(qbit, 'I', i)
+            self.tree_set_qbit_to_I(qbit, i)
             self.flush_operators()
             print('system energy:', self.data[0])
